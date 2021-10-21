@@ -1,0 +1,137 @@
+# Tuesday Morning Review
+
+### SIP Register
+
+1. When a SIP phone powers on, it wants to SIP REGISTER to a registrar.
+
+2. The registrar is to hold Address of Records, Passwords, and current SIP registrations
+
+
+#### Example - Phone signing in
+                                    address of record - password
+                                    1011@alta3.local - wallawallawashington
+                                    1012@alta3.local - hallahallawashington
+                                    
+UA 1011                             REGISTRAR (alta3.local)
+REGISTER sip:alta3.local ------------->
+contact: 1011@IP:port;expires=3600      (location)   (expires tag is asking for a 1 hour registration)
+to: 1011@alta3.local   (address of record)
+from: 1011@alta3.local (address of record)
+
+
+<------------------------------------ 401
+                            www-authenticate: RAND(nonce), realm, hashing algo to use
+                            
+REGISTER sip:alta3.local ------------->
+contact: 1011@IP:port;expires=3600      (location)
+to: 1011@alta3.local   (address of record)
+from: 1011@alta3.local (address of record)
+authenticate: RAND(nonce), realm, username, hashing algo, calculated hash
+
+                                            ## REGISTRAR authenticates your registration
+                                            ## if valid, will BIND your IP address to the Address of Record
+
+<------------------------------------ 200
+                            expires: 3600
+           (in an expires header or some tag, the server will indicate how long the registration is valid)
+
+
+
+
+
+
+
+#### Example - Phone signing out
+                                    address of record - password
+                                    1011@alta3.local - wallawallawashington
+                                    1012@alta3.local - hallahallawashington
+                                    
+UA 1011                             REGISTRAR (alta3.local)
+REGISTER sip:alta3.local ------------->
+contact: 1011@IP:port;expires=0      (location)   (expires tag is asking for a 1 hour registration)
+to: 1011@alta3.local   (address of record)
+from: 1011@alta3.local (address of record)
+
+
+<------------------------------------ 401
+                            www-authenticate: RAND(nonce), realm, hashing algo to use
+                            
+REGISTER sip:alta3.local ------------->
+contact: 1011@IP:port;expires=0      (location)
+to: 1011@alta3.local   (address of record)
+from: 1011@alta3.local (address of record)
+authenticate: RAND(nonce), realm, username, hashing algo, calculated hash
+
+
+<------------------------------------ 200
+                               expires: 0
+
+
+
+### SIP INVITE - Typical SIP Call flow
+
+
+                            (alta3.local)
+UA                            REGISTRAR                                     UA
+1011 (Alice)                                                                1012 (Bob)
+
+INVITE 1012@alta3.local --------->
++ SDP
+contact: 1011@aliceIP
+                         1. Look to RIGHT of @ sign.
+                            Am I authoritative for this?
+                         2. In this case, YES! Our domains match!
+                         3. CHECK THE DIAL PLAN (usually regex)
+                            to determine where this actually goes
+                         4. In this case, the registrar learns its a
+                            LOCALLY registered user. THe domain is dropped
+                            and replaced by the IP address in Bob's (1012)
+                            SIP REGISTER
+
+<--------------------------------- 100 (Trying)
+
+                            
+                                        INVITE 1012@IP ---------------------->
+                                        + SDP
+                                        contact: 1011@aliceIP
+                                        
+                                        <--------------------------------- 100 (Trying)
+
+
+                                        <--------------------------------- 180 (Ringing)
+
+
+<--------------------------------- 180 (Ringing)
+
+
+                                        <--------------------------------- 200 (OK) +SDP
+                                                                           contact: 1012@BobIP
+
+<--------------------------------- 200 (OK) + SDP
+                                   contact: 1012@BobIP
+
+
+# first transaction has ended
+# alice and bob now KNOW each other
+# they HAVE BUILT TRUST!
+# TRUST AKA SIP DIALOG (per RFC 3261)
+
+
+
+ACK 1012@IP ---------------------------->
+        
+                                           ACK 1012@IP ------------------------------> 
+
+<====================================== RTP ===========================================>
+
+                                          <----------------------------------------- BYE 1011@aliceIP
+
+                                          200 ------------------------------------------->
+                                          # there is only a SINGLE legal response to a BYE
+                                          # If your SIP gear is aware of state, it might be helpful
+                                          # by firing off a 200 BEFORE the SIP BYE arrives at ALICE
+
+<---------------------------------- BYE 1011@aliceIP
+
+200 ------------------------------------------->
+                                           # SIP GEAR would not transmit this 200 if it already sent a 200 to the BYE previously

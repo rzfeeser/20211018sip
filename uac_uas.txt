@@ -1,0 +1,34 @@
+# From == UAC (always sends the word)
+# To == UAS   (always sends the number)
+
+Alice                       Bob
+
+INVITE ---------------------->
+From: Alice
+To: Bob
+contact: Alice@IP
+
+<-------------------------- 180
+                        From: Alice
+                        To: Bob
+                        contact: bob@IP
+
+<-------------------------- 200
+                        From: Alice (still the UAC)
+                        To: Bob     (still the UAS!)
+                        contact: bob@IP
+
+ACK ---------------------->
+From: Alice
+To: Bob
+
+RTP BEGINS
+
+<-------------------------- BYE
+                        From: Bob
+                        To: Alice
+
+200 ---------------------->
+From: Bob
+To: Alice
+
