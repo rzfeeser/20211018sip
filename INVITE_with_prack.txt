@@ -1,0 +1,180 @@
+# INVITE with PRACK
+
+alta3.com
+                                                                          *Registrar*
+1011                                                                         Proxy                                                               1012
+
+INVITE 1012@alta3.com + SDP -------------------------------------------------------> 
+via: 1011@IP     # hops through the SIP network, restarts @ B2BUAs
+contact: 1011@IP # defines the SIP message creators address
+from: 1011@alta3.com;tag=abc123   # from tag is another unique ID created by alice used within this callflow
+to: 1012@alta3.com
+supported: 100rel      # opportunity to showcase RFCs beyond 3261 that you use
+call-id: abcdef123456  # unique identifier used in every message within this callflow
+cseq: INVITE 101       # the request followed by an integer (wraps around 2^32 and restarts at the top of each call)
+
+
+                                                                            INVITE 1012@IP + SDP --------------------------------------------------------> 
+                                                                            via: proxy       # adds his via header to the top of the stack
+                                                                            via: 1011@IP     # hops through the SIP network, restarts @ B2BUAs
+                                                                            contact: 1011@IP # defines the SIP message creators address
+                                                                            from: 1011@alta3.com;tag=abc123
+                                                                            to: 1012@alta3.com
+                                                                            record-route: proxy # add this if you are a proxy and want to stay involved
+                                                                            supported: 100rel      # opportunity to showcase RFCs beyond 3261 that you use
+                                                                            call-id: abcdef123456
+                                                                            cseq: INVITE 101
+                                                                            
+                                                                            
+                                                                            <------------------------------------------------------------------- 180 + SDP
+                                                                                                                    via: proxy, 1011@IP
+                                                                                                                    required: 100rel
+                                                                                                                    from: 1011@alta3.com;tag=abc123
+                                                                                                                    to: 1012@alta3.com;tag=xyz098 # to tag created by bob
+                                                                                                                    call-id: abcdef123456
+                                                                                                                    contact: 1012@IP  # bob is sending us his location
+                                                                                                                    record-route: proxy
+                                                                                                                    cseq: INVITE 101
+<------------------------------------------------------------------- 180 + SDP
+                                        via: 1011@IP
+                                        required: 100rel
+                                        from: 1011@alta3.com;tag=abc123
+                                        to: 1012@alta3.com;tag=xyz098
+                                        call-id: abcdef123456
+                                        contact: 1012@IP
+                                        record-route: proxy
+                                        cseq: INVITE 101
+                                        
+
+
+# the PRACK is sent IN DIALOG
+PRACK 1012@IP -------------------------------------------------------> 
+via: 1011@IP     # hops through the SIP network, restarts @ B2BUAs
+contact: 1011@IP # defines the SIP message creators address
+from: 1011@alta3.com;tag=abc123
+to: 1012@alta3.com
+supported: 100rel      # opportunity to showcase RFCs beyond 3261 that you use
+call-id: abcdef123456
+route: proxy
+cseq: PRACK 102
+
+
+
+                                                                            PRACK 1012@IP --------------------------------------------------------> 
+                                                                            via: proxy       # adds his via header to the top of the stack
+                                                                            via: 1011@IP     # hops through the SIP network, restarts @ B2BUAs
+                                                                            contact: 1011@IP # defines the SIP message creators address
+                                                                            from: 1011@alta3.com;tag=abc123
+                                                                            to: 1012@alta3.com
+                                                                            record-route: proxy # add this if you are a proxy and want to stay involved
+                                                                            supported: 100rel      # opportunity to showcase RFCs beyond 3261 that you use
+                                                                            call-id: abcdef123456
+                                                                            cseq: PRACK 102
+                                                                            
+
+
+                                                                            <------------------------------------------------------------------- 200
+                                                                                                                    via: proxy, 1011@IP
+                                                                                                                    required: 100rel
+                                                                                                                    from: 1011@alta3.com;tag=abc123
+                                                                                                                    to: 1012@alta3.com;tag=xyz098 # to tag created by bob
+                                                                                                                    call-id: abcdef123456
+                                                                                                                    contact: 1012@IP  # bob is sending us his location
+                                                                                                                    record-route: proxy
+                                                                                                                    cseq: PRACK 102
+<------------------------------------------------------------------- 200
+                                        via: 1011@IP
+                                        required: 100rel
+                                        from: 1011@alta3.com;tag=abc123
+                                        to: 1012@alta3.com;tag=xyz098
+                                        call-id: abcdef123456
+                                        contact: 1012@IP
+                                        record-route: proxy
+                                        cseq: PRACK 102
+
+                                                                            <------------------------------------------------------------------- 200   ### PICKUP
+                                                                                                                    via: proxy, 1011@IP
+                                                                                                                    required: 100rel
+                                                                                                                    from: 1011@alta3.com;tag=abc123
+                                                                                                                    to: 1012@alta3.com;tag=xyz098 # to tag created by bob
+                                                                                                                    call-id: abcdef123456
+                                                                                                                    contact: 1012@IP  # bob is sending us his location
+                                                                                                                    record-route: proxy
+                                                                                                                    cseq: INVITE 101
+<------------------------------------------------------------------- 200
+                                        via: 1011@IP
+                                        required: 100rel
+                                        from: 1011@alta3.com;tag=abc123
+                                        to: 1012@alta3.com;tag=xyz098
+                                        call-id: abcdef123456
+                                        contact: 1012@IP
+                                        record-route: proxy
+                                        cseq: INVITE 101        
+
+ACK 1012@IP -------------------------------------------------------> 
+via: 1011@IP     # hops through the SIP network, restarts @ B2BUAs
+from: 1011@alta3.com;tag=abc123
+to: 1012@alta3.com
+supported: 100rel      # opportunity to showcase RFCs beyond 3261 that you use
+call-id: abcdef123456
+route: proxy
+cseq: ACK 101
+
+
+
+                                                                            ACK 1012@IP --------------------------------------------------------> 
+                                                                            via: proxy       # adds his via header to the top of the stack
+                                                                            via: 1011@IP     # hops through the SIP network, restarts @ B2BUAs
+                                                                            from: 1011@alta3.com;tag=abc123
+                                                                            to: 1012@alta3.com
+                                                                            record-route: proxy # add this if you are a proxy and want to stay involved
+                                                                            supported: 100rel      # opportunity to showcase RFCs beyond 3261 that you use
+                                                                            call-id: abcdef123456
+                                                                            cseq: ACK 101
+
+
+
+
+<======================================================================= RTP ====================================================================>
+
+
+BYE 1012@IP -------------------------------------------------------> 
+via: 1011@IP     # hops through the SIP network, restarts @ B2BUAs
+from: 1011@alta3.com;tag=abc123
+to: 1012@alta3.com
+supported: 100rel      # opportunity to showcase RFCs beyond 3261 that you use
+call-id: abcdef123456
+route: proxy
+cseq: BYE 103
+
+
+
+                                                                            BYE 1012@IP --------------------------------------------------------> 
+                                                                            via: proxy       # adds his via header to the top of the stack
+                                                                            via: 1011@IP     # hops through the SIP network, restarts @ B2BUAs
+                                                                            from: 1011@alta3.com;tag=abc123
+                                                                            to: 1012@alta3.com
+                                                                            record-route: proxy # add this if you are a proxy and want to stay involved
+                                                                            supported: 100rel      # opportunity to showcase RFCs beyond 3261 that you use
+                                                                            call-id: abcdef123456
+                                                                            cseq: BYE 103
+                                                                            
+                                                                            
+                                                                            <------------------------------------------------------------------- 200
+                                                                                                                    via: proxy, 1011@IP
+                                                                                                                    required: 100rel
+                                                                                                                    from: 1011@alta3.com;tag=abc123
+                                                                                                                    to: 1012@alta3.com;tag=xyz098 # to tag created by bob
+                                                                                                                    call-id: abcdef123456
+                                                                                                                    contact: 1012@IP  # bob is sending us his location
+                                                                                                                    record-route: proxy
+                                                                                                                    cseq: BYE 103
+<------------------------------------------------------------------- 200
+                                        via: 1011@IP
+                                        required: 100rel
+                                        from: 1011@alta3.com;tag=abc123
+                                        to: 1012@alta3.com;tag=xyz098
+                                        call-id: abcdef123456
+                                        contact: 1012@IP
+                                        record-route: proxy
+                                        cseq: BYE 103
